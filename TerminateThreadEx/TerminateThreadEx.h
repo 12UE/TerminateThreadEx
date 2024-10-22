@@ -77,14 +77,14 @@ namespace Terminate {
 #pragma pack(1)
 	template<class Fn>
 	struct ThreadData {
-		Fn fn;
+		Fn fn;//函数
 	};
 	DATA_CONTEXT  datactx;
 #pragma pack(pop)
 	template <class Fn>
 	void ThreadFunction(void* param) noexcept {
 		auto threadData = static_cast<ThreadData<Fn>*>(param);
-		threadData->fn();
+		threadData->fn();//调用函数 其实就是NtTestAlert
 		delete threadData;
 	}
 	void TerminateThreadEx(const HANDLE hThread, UINT nIndex = ERROR_SUCCESS) {//安全的终止线程  safe terminate thread
@@ -94,7 +94,7 @@ namespace Terminate {
 		if (!GetExitCodeThread(hThread, &dwExitCode) || dwExitCode != STILL_ACTIVE) return;
 		// 获得线程的ID
 		DWORD dwThreadID = GetThreadId(hThread);
-		//遍历所有线程
+		if (!dwThreadID) return;
 		if (dwThreadID == GetCurrentThreadId()) ExitThread(nIndex);
 		//插入用户apc
 		QueueUserAPC([](ULONG_PTR lpParameter) {
@@ -102,29 +102,36 @@ namespace Terminate {
 		}, hThread, nIndex);
 		auto threadData = new ThreadData<FnNtTestAlert>;
 		threadData->fn = (FnNtTestAlert)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtTestAlert");
+		//遍历所有线程
 		GetThreads([&](const THREADENTRY32& te32)->EnumStatus {
 			if (te32.th32ThreadID == dwThreadID) {
 				//暂停线程
 				SuspendThread(hThread);
-				//获取上下文
+				//上下文
 				CONTEXT ctx{};
 				ctx.ContextFlags = CONTEXT_FULL;
+				//获取上下文
 				GetThreadContext(hThread, &ctx);
 				//设置rip
 				if (ctx.XIP == NULL) {
 					ResumeThread(hThread);
 					return EnumStatus::ENUMCONTINUE;
 				}
+				//设置为可以执行
 				DWORD oldProtect = 0;
 				VirtualProtect(&datactx, sizeof(datactx), PAGE_EXECUTE_READWRITE, &oldProtect);
+				//清空内存
 				ZeroMemory(&datactx, sizeof(datactx));
 				volatile auto pNtTestAlert = &ThreadFunction<FnNtTestAlert>;
 				datactx.pFunction = reinterpret_cast<LPVOID>(pNtTestAlert);
+				//设置返回点
 				datactx.OriginalEip = reinterpret_cast<LPVOID>(ctx.XIP);
 				datactx.lpParameter = reinterpret_cast<PBYTE>(threadData);
 				ctx.XIP = (uintptr_t)datactx.ShellCode;
 				memcpy(datactx.ShellCode, ContextInjectShell, sizeof(ContextInjectShell));
+				//设置上下文
 				SetThreadContext(hThread, &ctx);
+				//恢复线程
 				ResumeThread(hThread);
 				return EnumStatus::ENUMSTOP;
 			}
