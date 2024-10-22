@@ -1,4 +1,4 @@
-#TerminateThreadEx
+TerminateThreadEx
 
 ## 简介
 
