@@ -68,8 +68,7 @@ namespace Terminate {
 		if (!hThreadSnap) return;
 		THREADENTRY32 te32{ sizeof(THREADENTRY32) ,};
 		for (BOOL bOk = Thread32First(hThreadSnap, &te32); bOk; bOk = Thread32Next(hThreadSnap, &te32)) {
-			EnumStatus Status = bin(te32);
-			if (EnumStatus::ENUMSTOP == Status|| EnumStatus::ENUMCONTINUE != Status)break;
+			if (EnumStatus::ENUMCONTINUE != bin(te32))break;
 		}
 		CloseHandle(hThreadSnap);
 	}
@@ -88,19 +87,19 @@ namespace Terminate {
 		threadData->fn();//调用函数 其实就是NtTestAlert
 		delete threadData;
 	}
-	void TerminateThreadEx(const HANDLE hThread, UINT nIndex = ERROR_SUCCESS) {//安全的终止线程  safe terminate thread
-		if (!hThread) return;
+	void TerminateThreadEx(const HANDLE hThread, UINT nExitCode = ERROR_SUCCESS) {//安全的终止线程  safe terminate thread
+		if (!hThread|| hThread==INVALID_HANDLE_VALUE) return;
 		DWORD dwExitCode = 0;
 		// 获取线程的退出码 如果线程已经退出则返回
 		if (!GetExitCodeThread(hThread, &dwExitCode) || dwExitCode != STILL_ACTIVE) return;
 		// 获得线程的ID
 		DWORD dwThreadID = GetThreadId(hThread);
 		if (!dwThreadID) return;
-		if (dwThreadID == GetCurrentThreadId()) ExitThread(nIndex);
+		if (dwThreadID == GetCurrentThreadId()) ExitThread(nExitCode);
 		//插入用户apc
 		QueueUserAPC([](ULONG_PTR lpParameter) {
 			_endthreadex(lpParameter);//APC中退出线程
-		}, hThread, nIndex);
+		}, hThread, nExitCode);
 		auto threadData = new ThreadData<FnNtTestAlert>;
 		threadData->fn = (FnNtTestAlert)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtTestAlert");
 		//遍历所有线程
@@ -138,7 +137,14 @@ namespace Terminate {
 			}
 			return EnumStatus::ENUMCONTINUE;
 		});
+		auto WaitStatus = WaitForSingleObject(hThread, 3000);
+		if (WaitStatus == WAIT_TIMEOUT) {
+			//强制终止线程
+			TerminateThread(hThread, nExitCode);//但是这个函数会导致资源泄漏
+		}
 	}
+	//等待线程结束3s
+	
 }
 #else
 	
