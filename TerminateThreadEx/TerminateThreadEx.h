@@ -79,10 +79,6 @@ namespace Terminate {
 	struct ThreadData {
 		Fn fn;
 	};
-	template<class Fn, class... Args>
-	struct ThreadData2 : public ThreadData<Fn> {
-		std::tuple<Args...> params;
-	};
 	DATA_CONTEXT  datactx;
 #pragma pack(pop)
 	template <class Fn>
