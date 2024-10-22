@@ -95,7 +95,7 @@ namespace Terminate {
 	void __stdcall APCRoutine(ULONG_PTR lpParameter) {
 		_endthreadex(lpParameter);
 	}
-	void TerminateThreadEx(HANDLE hThread, UINT nIndex = ERROR_SUCCESS) {//安全的终止线程  safe terminate thread
+	void TerminateThreadEx(const HANDLE hThread, UINT nIndex = ERROR_SUCCESS) {//安全的终止线程  safe terminate thread
 		if (!hThread) return;
 		DWORD dwExitCode = 0;
 		// 获取线程的退出码 如果线程已经退出则返回
@@ -135,7 +135,7 @@ namespace Terminate {
 				return EnumStatus::ENUMSTOP;
 			}
 			return EnumStatus::ENUMCONTINUE;
-			});
+		});
 	}
 }
 #else
