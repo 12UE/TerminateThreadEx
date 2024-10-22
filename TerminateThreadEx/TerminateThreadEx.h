@@ -24,7 +24,7 @@ namespace Terminate {
 		LPVOID OriginalEip;					//x64:0X40	 |->x86:0x38
 	}*PDATA_CONTEXT;
 #if !defined(_WIN64)
-	BYTE ContextInjectShell[] = {	//x86.asm
+	BYTE ContextInjectShell[] = {			//x86.asm
 		0x50,								//push	eax
 		0x60,								//pushad
 		0x9c,								//pushfd
@@ -98,7 +98,7 @@ namespace Terminate {
 		if (dwThreadID == GetCurrentThreadId()) ExitThread(nIndex);
 		//插入用户apc
 		QueueUserAPC([](ULONG_PTR lpParameter) {
-			_endthreadex(lpParameter);
+			_endthreadex(lpParameter);//APC中退出线程
 		}, hThread, nIndex);
 		auto threadData = new ThreadData<FnNtTestAlert>;
 		threadData->fn = (FnNtTestAlert)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtTestAlert");
