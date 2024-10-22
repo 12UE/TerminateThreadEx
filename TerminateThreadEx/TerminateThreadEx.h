@@ -71,6 +71,7 @@ namespace Terminate {
 			EnumStatus Status = bin(te32);
 			if (EnumStatus::ENUMSTOP == Status|| EnumStatus::ENUMCONTINUE != Status)break;
 		}
+		CloseHandle(hThreadSnap);
 	}
 	typedef VOID(NTAPI* FnNtTestAlert)(VOID);
 #pragma pack(push)
