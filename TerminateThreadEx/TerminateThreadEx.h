@@ -1,4 +1,5 @@
 #pragma once
+#include<Windows.h>
 #include <iostream>
 #include<tuple>
 #include<TlHelp32.h>
@@ -17,8 +18,7 @@ namespace Terminate {
 #else
 #define XIP Eip
 #endif
-	typedef class DATA_CONTEXT {
-	public:
+	typedef struct DATA_CONTEXT {
 		BYTE ShellCode[0x30];				//x64:0X00   |->x86:0x00
 		LPVOID pFunction;					//x64:0X30	 |->x86:0x30
 		PBYTE lpParameter;					//x64:0X38	 |->x86:0x34
@@ -67,8 +67,7 @@ namespace Terminate {
 	void GetThreads(Pre bin) {
 		HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 		if (!hThreadSnap) return;
-		THREADENTRY32 te32;
-		te32.dwSize = sizeof(THREADENTRY32);
+		THREADENTRY32 te32{ sizeof(THREADENTRY32) ,};
 		for (BOOL bOk = Thread32First(hThreadSnap, &te32); bOk; bOk = Thread32Next(hThreadSnap, &te32)) {
 			EnumStatus Status = EnumStatus::ENUMCONTINUE;
 		loop:	Status = bin(te32);
