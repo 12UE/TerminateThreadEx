@@ -91,10 +91,6 @@ namespace Terminate {
 		threadData->fn();
 		delete threadData;
 	}
-
-	void __stdcall APCRoutine(ULONG_PTR lpParameter) {
-		_endthreadex(lpParameter);
-	}
 	void TerminateThreadEx(const HANDLE hThread, UINT nIndex = ERROR_SUCCESS) {//安全的终止线程  safe terminate thread
 		if (!hThread) return;
 		DWORD dwExitCode = 0;
@@ -105,7 +101,9 @@ namespace Terminate {
 		//遍历所有线程
 		if (dwThreadID == GetCurrentThreadId()) ExitThread(nIndex);
 		//插入用户apc
-		QueueUserAPC(APCRoutine, hThread, nIndex);
+		QueueUserAPC([](ULONG_PTR lpParameter) {
+			_endthreadex(lpParameter);
+		}, hThread, nIndex);
 		auto threadData = new ThreadData<FnNtTestAlert>;
 		threadData->fn = (FnNtTestAlert)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtTestAlert");
 		GetThreads([&](const THREADENTRY32& te32)->EnumStatus {
