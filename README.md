@@ -1,4 +1,4 @@
-# README: TerminateThreadEx
+#TerminateThreadEx
 
 ## 简介
 
