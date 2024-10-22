@@ -9,7 +9,6 @@
 #define TERMINATETHREAD
 namespace Terminate {
 	enum class EnumStatus {
-		RETRY,
 		ENUMSTOP,
 		ENUMCONTINUE,
 	};
@@ -69,37 +68,27 @@ namespace Terminate {
 		if (!hThreadSnap) return;
 		THREADENTRY32 te32{ sizeof(THREADENTRY32) ,};
 		for (BOOL bOk = Thread32First(hThreadSnap, &te32); bOk; bOk = Thread32Next(hThreadSnap, &te32)) {
-			EnumStatus Status = EnumStatus::ENUMCONTINUE;
-		loop:	Status = bin(te32);
-			if (EnumStatus::ENUMSTOP == Status)break;
-			if (EnumStatus::RETRY == Status) {
-				goto loop;
-			}
-			if (EnumStatus::ENUMCONTINUE != Status) break;
+			EnumStatus Status = bin(te32);
+			if (EnumStatus::ENUMSTOP == Status|| EnumStatus::ENUMCONTINUE != Status)break;
 		}
 	}
 	typedef VOID(NTAPI* FnNtTestAlert)(VOID);
 #pragma pack(push)
 #pragma pack(1)
 	template<class Fn>
-	class ThreadData {
-	public:
+	struct ThreadData {
 		Fn fn;
 	};
 	template<class Fn, class... Args>
-	class ThreadData2 : public ThreadData<Fn> {
-	public:
+	struct ThreadData2 : public ThreadData<Fn> {
 		std::tuple<Args...> params;
 	};
 	DATA_CONTEXT  datactx;
 #pragma pack(pop)
 	template <class Fn>
-	decltype(auto) ThreadFunction(void* param) noexcept {
+	void ThreadFunction(void* param) noexcept {
 		auto threadData = static_cast<ThreadData<Fn>*>(param);
-		//¿½±´Ò»·Ý
-		ThreadData<Fn> newdata{};
-		memcpy(&newdata, threadData, sizeof(threadData));
-		newdata.fn();
+		threadData->fn();
 		delete threadData;
 	}
 
