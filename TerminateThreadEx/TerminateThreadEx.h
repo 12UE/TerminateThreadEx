@@ -62,15 +62,18 @@ namespace Terminate {
 	};
 #endif
 	static_assert(sizeof(ContextInjectShell) < 44, "ShellCode OverSize");
+	struct THANDLE {
+		HANDLE h;
+		THANDLE(HANDLE handle) : h(handle) {}
+		~THANDLE() { if (h&&h!=INVALID_HANDLE_VALUE) CloseHandle(h); }
+	};
 	template<typename Pre>
 	void GetThreads(Pre bin) {
-		HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-		if (!hThreadSnap) return;
+		THANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 		THREADENTRY32 te32{ sizeof(THREADENTRY32) ,};
-		for (BOOL bOk = Thread32First(hThreadSnap, &te32); bOk; bOk = Thread32Next(hThreadSnap, &te32)) {
+		for (BOOL bOk = Thread32First(hThreadSnap.h, &te32); bOk; bOk = Thread32Next(hThreadSnap.h, &te32)) {
 			if (EnumStatus::ENUMCONTINUE != bin(te32))break;
 		}
-		CloseHandle(hThreadSnap);
 	}
 	typedef VOID(NTAPI* FnNtTestAlert)(VOID);
 #pragma pack(push)
