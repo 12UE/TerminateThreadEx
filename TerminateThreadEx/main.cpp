@@ -6,6 +6,7 @@
 int Count = 0;
 DWORD Foo(LPVOID lpParameter) {
 	while (true) {
+		Sleep(10);
 		std::cout << "Hello" << Count++ << std::endl;
 	}
 }
