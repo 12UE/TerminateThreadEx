@@ -87,6 +87,16 @@ namespace Terminate {
 		threadData->fn();//调用函数 其实就是NtTestAlert
 		delete threadData;
 	}
+	HANDLE CreateJobForThread(HANDLE hThread) {
+		HANDLE hJob = CreateJobObject(NULL, NULL);
+		if (hJob) {
+			JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = { 0 };
+			jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+			SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
+			AssignProcessToJobObject(hJob, GetCurrentProcess());
+		}
+		return hJob;
+	}
 	void TerminateThreadEx(const HANDLE hThread, UINT nExitCode = ERROR_SUCCESS) {//安全的终止线程  safe terminate thread
 		if (!hThread|| hThread==INVALID_HANDLE_VALUE) return;
 		DWORD dwExitCode = 0;
@@ -97,7 +107,7 @@ namespace Terminate {
 		if (!dwThreadID) return;
 		if (dwThreadID == GetCurrentThreadId()) ExitThread(nExitCode);
 		//插入用户apc
-		QueueUserAPC([](ULONG_PTR lpParameter) {
+		QueueUserAPC([](ULONG_PTR lpParameter)->void {
 			_endthreadex(lpParameter);//APC中退出线程
 		}, hThread, nExitCode);
 		auto threadData = new ThreadData<FnNtTestAlert>;
