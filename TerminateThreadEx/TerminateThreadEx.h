@@ -141,10 +141,8 @@ namespace Terminate {
 			return EnumStatus::ENUMCONTINUE;
 		});
 	}
-	
 }
 #else
-	
 #endif // !TERMINATETHREAD
 
 
