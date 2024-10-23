@@ -147,13 +147,7 @@ namespace Terminate {
 			}
 			return EnumStatus::ENUMCONTINUE;
 		});
-		auto WaitStatus = WaitForSingleObject(hThread, 3000);
-		if (WaitStatus == WAIT_TIMEOUT) {
-			//强制终止线程
-			TerminateThread(hThread, nExitCode);//但是这个函数会导致资源泄漏
-		}
 	}
-	//等待线程结束3s
 	
 }
 #else
